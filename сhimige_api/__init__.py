@@ -19,7 +19,7 @@ class Chimige():
     def __init__(self, session_name: str, email: str, password: str, force_login=False):
         """Объявление self-объекта"""
         self.req_sess = requests.Session()
-        self.session_name = session_name + '.txt'
+        self.session_name = session_name + '.session'
         self.email = email
         self.password = str(password)
         self.cookie = None
@@ -54,12 +54,12 @@ class Chimige():
 
     def _save_session(self):
         """Сохраняет сессию"""
-        with open(self.session_name, "w") as f:
+        with open(self.session_name, "w", encoding='utf-8') as f:
             f.write(self.cookie)
 
     def _get_session(self):
         """Получить сессию"""
-        with open(self.session_name, "r") as f:
+        with open(self.session_name, "r", encoding='utf-8') as f:
             return f.read()
 
     def msg(self, text: str, conservation_id: int or str):
