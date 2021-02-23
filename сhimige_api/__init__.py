@@ -21,21 +21,22 @@ class Chimige():
         self.req_sess = requests.Session()
         self.session_name = session_name + '.session'
         self.email = email
-        self.password = str(password)
+        self.password = password
         self.cookie = None
-        self.headers = {'Content-type': 'application/x-www-form-urlencoded',
-                        'Content-Length': '5',
-                        'Accept': 'application/json, text/javascript, */*; q=0.01',
-                        'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
-                        'Accept-Encoding': 'gzip, deflate, br',
-                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Origin': 'https://chimige.ru',
-                        'DNT': '1',
-                        'Connection': 'keep-alive',
-                        'Referer': 'https://chimige.ru//messages',
-                        'TE': 'Trailers'
-                        }
+        self.headers = {
+            'Content-type': 'application/x-www-form-urlencoded',
+            'Content-Length': '5',
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Origin': 'https://chimige.ru',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Referer': 'https://chimige.ru//messages',
+            'TE': 'Trailers'
+            }
         if not isfile(self.session_name):
             force_login = True
         self._login(force_login)
@@ -44,9 +45,9 @@ class Chimige():
         """Войти в аккаунт"""
         if force_login:
             data = {"username_email": self.email, "password": self.password}
-            r = self.req_sess.post("https://chimige.ru//includes/ajax/core/signin.php",
-                              headers=self.headers, data=data)
-            self.cookie = "; ".join([f"{c.name}={c.value}" for c in r.cookies])
+            req = self.req_sess.post("https://chimige.ru//includes/ajax/core/signin.php",
+                    headers=self.headers, data=data)
+            self.cookie = "; ".join([f"{c.name}={c.value}" for c in req.cookies])
             self._save_session()
         else:
             self.cookie = self._get_session()
@@ -54,42 +55,57 @@ class Chimige():
 
     def _save_session(self):
         """Сохраняет сессию"""
-        with open(self.session_name, "w", encoding='utf-8') as f:
-            f.write(self.cookie)
+        with open(self.session_name, "w", encoding='utf-8') as file:
+            file.write(self.cookie)
 
     def _get_session(self):
         """Получить сессию"""
-        with open(self.session_name, "r", encoding='utf-8') as f:
-            return f.read()
+        with open(self.session_name, "r", encoding='utf-8') as file:
+            return file.read()
 
     def msg(self, text: str, conservation_id: int or str):
         """Отправить сообщение"""
         data = {"message": text, "conversation_id": conservation_id}
         self.req_sess.post("https://chimige.ru//includes/ajax/chat/post.php", 
-                      headers=self.headers, data=data)
+                headers=self.headers, data=data)
         self.req_sess.post("https://chimige.ru//includes/ajax/data/reset.php", 
-                      headers=self.headers, data={"reset":"messages"})
+                headers=self.headers, data={"reset":"messages"})
 
 # Пока не работает
 # И не будет
 # а как жить
-    # def send_photo(self, path, conservation_id, message=None):
-
+#   def send_photo(self, path, conservation_id, message=None):
+#       """Отправка фото"""
+#       if self._not_exited():
+#           with open(path,'rb') as fil:
+#               byte = fil.read()
+#           data ={"secret": "e48ae022bf62df43ac12bb517badcd09", "file":byte, "type":"photos",
+#                   "handle":"chat", "multiple":"false"}
+#           r = self.req_sess.post("https://chimige.ru//includes/ajax/data/upload.php", 
+#                                   headers=self.headers, data=data)
+#           self.r = r
+#               path = r.request.body
+#           data = {"photo":path, "conservation_id":conservation_id}
+#           if message != None:
+#               data["message"] = message
+#           self.req_sess.post("https://chimige.ru//includes/ajax/chat/post.php", 
+#                               headers=self.headers, data=data)
 
     def check_new_msg(self):
         data = {"filter":"", "last_request":0, "last_message":"0", "last_notification":0, 
                 "last_post":25, "get":"newsfeed"}
         _last_message = self.req_sess.post("https://chimige.ru//includes/ajax/data/live.php",
-                          data=data, headers=self.headers)
+                    data=data, headers=self.headers)
         self._last_message = _last_message
         self._last_message._content = loads(_last_message._content)
         if int(_last_message.content["conversations_count"]) >= 1:
-            self._last_message.message = self._last_message._content["conversations"].split("</li><li")[0].split("class=")[1:]
+            self._last_message.message = self._last_message._content["conversations"].split("\
+                    </li><li")[0].split("class=")[1:]
             return True
         return False
 
-    def get_new_message(self):
-        class _ret_message():
+    def get_new_message(self): # Да, это жестко
+        class _return_message():
             pass
         message = self._last_message.message
         if len(message) >= 10:
@@ -101,7 +117,7 @@ class Chimige():
                     text = message[5].split('"text">')[1].split("</div> <div")[0].split("""
                                 """)[1].split("""
                         """)[0]
-            ret = _ret_message()
+            ret = _return_message()
             ret.group_chat = group_chat
             ret.conservation_id = conservation_id
             ret.text = text
@@ -117,7 +133,7 @@ class Chimige():
             text = message[5].split('"text">')[1].split("</div> <div")[0].split("""
                                             """)[1].split("""
                                 """)[0]
-            ret = _ret_message()
+            ret = _return_message()
             ret.group_chat = group_chat
             ret.conservation_id = conservation_id
             ret.text = text
