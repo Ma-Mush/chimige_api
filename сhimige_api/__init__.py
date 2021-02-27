@@ -6,9 +6,11 @@ MaMush (vk.com/maks.mushtriev2, t.me/Error_mak25, github.com/Ma-Mush)
 Łukasz Tshipenchko (t.me/tshipenchko, github.com/tshipenchko)
 
 Разработка 02.2021-н.в.
+Релиз 1.0 от 27 февраля 2021 года
+
 """
 
-import requests
+import requests # Берегите интернет!
 from json import loads
 from os.path import isfile
 
@@ -71,26 +73,6 @@ class Chimige():
         self.req_sess.post("https://chimige.ru//includes/ajax/data/reset.php", 
                 headers=self.headers, data={"reset":"messages"})
 
-# Пока не работает
-# И не будет
-# а как жить
-#   def send_photo(self, path, conservation_id, message=None):
-#       """Отправка фото"""
-#       if self._not_exited():
-#           with open(path,'rb') as fil:
-#               byte = fil.read()
-#           data ={"secret": "e48ae022bf62df43ac12bb517badcd09", "file":byte, "type":"photos",
-#                   "handle":"chat", "multiple":"false"}
-#           r = self.req_sess.post("https://chimige.ru//includes/ajax/data/upload.php", 
-#                                   headers=self.headers, data=data)
-#           self.r = r
-#               path = r.request.body
-#           data = {"photo":path, "conservation_id":conservation_id}
-#           if message != None:
-#               data["message"] = message
-#           self.req_sess.post("https://chimige.ru//includes/ajax/chat/post.php", 
-#                               headers=self.headers, data=data)
-
     def check_new_msg(self):
         data = {"filter":"", "last_request":0, "last_message":"0", "last_notification":0, 
                 "last_post":25, "get":"newsfeed"}
@@ -108,38 +90,25 @@ class Chimige():
         class _return_message():
             pass
         message = self._last_message.message
-        if len(message) >= 10:
-            group_chat = True
-            conservation_id = int(message[1].split('"')[3])
-            chat_name = message[1].split('"')[7]
+        ret = _return_message()
+        new_events = message.count('"data-content"> <div><span ')
+        if len(message) >= 10 and new_events == 1:
+            ret.group_chat = True
+            ret.conservation_id = int(message[1].split('"')[3])
+            ret.chat_name = message[1].split('"')[7]
             for i in range(3, len(message)-1):
                 if message[i][1:5] == "text":
-                    text = message[5].split('"text">')[1].split("</div> <div")[0].split("""
+                    ret.text = message[5].split('"text">')[1].split("</div> <div")[0].split("""
                                 """)[1].split("""
                         """)[0]
-            ret = _return_message()
-            ret.group_chat = group_chat
-            ret.conservation_id = conservation_id
-            ret.text = text
-            ret.chat_name = chat_name
-            return ret
-        elif len(message) == 7:
-            group_chat = False
-            conservation_id = int(message[1].split('"')[3])
-            user_id = int(message[1].split('"')[5])
-            user_name = message[1].split('"')[7]
-            user_short_name = message[1].split('"')[11]
-            user_photo = message[2].split('"')[3]
-            text = message[5].split('"text">')[1].split("</div> <div")[0].split("""
+        elif len(message) < 9 or new_events > 1:
+            ret.group_chat = False
+            ret.conservation_id = int(message[1].split('"')[3])
+            ret.user_id = int(message[1].split('"')[5])
+            ret.user_name = message[1].split('"')[7]
+            ret.user_short_name = message[1].split('"')[11]
+            ret.user_photo = message[2].split('"')[3]
+            ret.text = message[5].split('"text">')[1].split("</div> <div")[0].split("""
                                             """)[1].split("""
                                 """)[0]
-            ret = _return_message()
-            ret.group_chat = group_chat
-            ret.conservation_id = conservation_id
-            ret.text = text
-            ret.user_id = user_id
-            ret.user_name = user_name
-            ret.user_short_name = user_short_name
-            ret.user_photo = user_photo
-            return ret
-        return message
+        return ret
